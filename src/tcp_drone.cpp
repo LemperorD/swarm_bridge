@@ -62,14 +62,14 @@ int main(int argc, char **argv) {
   bridge.reset(new ReliableBridge(self_id_in_bridge_, ip_list_, id_list_, 100000));
 
   // 注册回调函数
-  pose_sub_ = nh.subscribe("mavros/local_position/pose", 10, pose_sub_cb, ros::TransportHints().tcpNoDelay());
-  vel_sub_ = nh.subscribe("mavros/local_position/velocity", 10, vel_sub_cb, ros::TransportHints().tcpNoDelay());
-  battery_sub_ = nh.subscribe("mavros/battery", 10, battery_sub_cb, ros::TransportHints().tcpNoDelay());
-  state_sub_ = nh.subscribe("mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
-  waypoint_list_sub_ = nh.subscribe("mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
-  video_sub_ = nh.subscribe("camera/image", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
+  pose_sub_ = nh.subscribe("/mavros/local_position/pose", 10, pose_sub_cb, ros::TransportHints().tcpNoDelay());
+  vel_sub_ = nh.subscribe("/mavros/local_position/velocity_local", 10, vel_sub_cb, ros::TransportHints().tcpNoDelay());
+  battery_sub_ = nh.subscribe("/mavros/battery", 10, battery_sub_cb, ros::TransportHints().tcpNoDelay());
+  state_sub_ = nh.subscribe("/mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
+  waypoint_list_sub_ = nh.subscribe("/mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
+  video_sub_ = nh.subscribe("/ruiyan_ros_sdk", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
 
-  waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("mavros/mission/push");
+  waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("/mavros/mission/push");
 
   // if (bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb))
   // {
