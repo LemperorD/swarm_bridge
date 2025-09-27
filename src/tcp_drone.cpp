@@ -1,16 +1,16 @@
 #include "reliable_bridge.hpp"
 #include "tcp_drone_station.hpp"
 
-int self_id_;
-int self_id_in_bridge_;
-int drone_num_;
-int ground_station_num_;
-bool is_groundstation_;
+// int self_id_;
+// int self_id_in_bridge_;
+// int drone_num_;
+// int ground_station_num_;
+// bool is_groundstation_;
 
-vector<int> id_list_;
-vector<string> ip_list_;
+// vector<int> id_list_;
+// vector<string> ip_list_;
 
-unique_ptr<ReliableBridge> bridge;
+// unique_ptr<ReliableBridge> bridge;
 
 ros::Publisher takeoff_command_pub_; // 地面到飞机：起飞指令
 ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航

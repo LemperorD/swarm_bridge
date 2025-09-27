@@ -23,6 +23,17 @@
 
 using namespace std;
 
+int self_id_;
+int self_id_in_bridge_;
+int drone_num_;
+int ground_station_num_;
+bool is_groundstation_;
+
+vector<int> id_list_;
+vector<string> ip_list_;
+
+unique_ptr<ReliableBridge> bridge;
+
 // ---------------- 工具函数 ----------------
 inline int remap_ground_station_id(int id) {
   return id + drone_num_;

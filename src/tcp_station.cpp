@@ -1,16 +1,16 @@
 #include "reliable_bridge.hpp"
 #include "tcp_drone_station.hpp"
 
-int self_id_;
-int self_id_in_bridge_;
-int drone_num_;
-int ground_station_num_;
-bool is_groundstation_;
+// int self_id_;
+// int self_id_in_bridge_;
+// int drone_num_;
+// int ground_station_num_;
+// bool is_groundstation_;
 
-vector<int> id_list_;
-vector<string> ip_list_;
+// vector<int> id_list_;
+// vector<string> ip_list_;
 
-unique_ptr<ReliableBridge> bridge;
+// unique_ptr<ReliableBridge> bridge;
 
 ros::Subscriber takeoff_command_sub_; // 地面到飞机：起飞指令
 ros::Subscriber land_command_sub_;    // 地面到飞机：降落或返航
@@ -118,15 +118,15 @@ int main(int argc, char **argv) {
 }
 
 void takeoff_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
-  send_to_all_drone_except_me("/takeoff_command_tcp", msg);
+  send_to_all_drone_except_me("/takeoff_command_tcp", *msg);
 }
 
 void land_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
-  send_to_all_drone_except_me("/land_command_tcp", msg);
+  send_to_all_drone_except_me("/land_command_tcp", *msg);
 }
 
 void waypoint_list_sub_cb(const std_msgs::String::ConstPtr &msg) {
-  send_to_all_drone_except_me("/waypoint_list_tcp", msg);
+  send_to_all_drone_except_me("/waypoint_list_tcp", *msg);
 }
 
 void pose_bridge_cb(int ID, ros::SerializedMessage &m) {
