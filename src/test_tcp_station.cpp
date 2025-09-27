@@ -76,6 +76,7 @@ void odom_sub_cb(const nav_msgs::Odometry::ConstPtr &msg) {
 void odom_bridge_cb(int ID, ros::SerializedMessage &m) {
   nav_msgs::Odometry odom;
   ros::serialization::deserializeMessage(m, odom);
+  ROS_INFO("Received odom");
   odom_pub_.publish(odom);
   odom_pub_share_.publish(odom);
 }
@@ -120,7 +121,7 @@ int main(int argc, char **argv) {
   auto odom_sub = nh.subscribe("odom", 10, odom_sub_cb, ros::TransportHints().tcpNoDelay());
   odom_pub_ = nh.advertise<nav_msgs::Odometry>("/others_odom1", 10);
   odom_pub_share_ = nh.advertise<nav_msgs::Odometry>("/share_odom1", 10);
-  bridge->register_callback(0, "/odom_tcp", odom_bridge_cb);
+  bridge->register_callback(1, "/odom_tcp", odom_bridge_cb);
 
   ros::spin();
   bridge->StopThread();

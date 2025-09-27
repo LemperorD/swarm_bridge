@@ -12,6 +12,17 @@ vector<string> ip_list_;
 
 unique_ptr<ReliableBridge> bridge;
 
+ros::Publisher takeoff_command_pub_; // 地面到飞机：起飞指令
+ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航
+ros::Publisher waypoint_push_pub_; // 地面到飞机：航点下发
+
+ros::Subscriber pose_sub_; // 飞机到地面：位姿
+ros::Subscriber vel_sub_; // 飞机到地面：速度
+ros::Subscriber battery_sub_; // 飞机到地面：电池状态
+ros::Subscriber state_sub_; // 飞机到地面：飞控状态
+ros::Subscriber waypoint_list_sub_; // 飞机到地面：当前航点列表
+ros::Subscriber video_sub_; // 飞机到地面：视频流
+
 void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：起飞指令
 void land_command_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
 void waypoint_push_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：航点下发
@@ -48,7 +59,69 @@ int main(int argc, char **argv) {
 
   bridge.reset(new ReliableBridge(self_id_in_bridge_, ip_list_, id_list_, 100000));
 
+  // 注册回调函数
+  pose_sub_ = nh.subscribe("odom", 10, pose_sub_cb, ros::TransportHints().tcpNoDelay());
+  vel_sub_ = nh.subscribe("cmd_vel", 10, vel_sub_cb, ros::TransportHints().tcpNoDelay());
+  battery_sub_ = nh.subscribe("battery", 10, battery_sub_cb, ros::TransportHints().tcpNoDelay());
+  state_sub_ = nh.subscribe("/mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
+  waypoint_list_sub_ = nh.subscribe("waypoint_list", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
+  video_sub_ = nh.subscribe("camera/image", 10, video_sub_cb, ros::TransportHints().tcpNoDelay());
+
+  bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb);
+  bridge->register_callback(self_id_in_bridge_, "/land_command_tcp", land_command_bridge_cb);
+  bridge->register_callback(self_id_in_bridge_, "/waypoint_push_tcp", waypoint_push_bridge_cb);
+
+  takeoff_command_pub_ = nh.advertise<std_msgs::Empty>("takeoff_command", 10);
+  land_command_pub_ = nh.advertise<std_msgs::Empty>("land_command", 10);
+  waypoint_push_pub_ = nh.advertise<mavros_msgs::WaypointPush>("waypoint_push", 10);
+
   ros::spin();
   bridge->StopThread();
   return 0;
+}
+
+void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m) {
+  std_msgs::Empty cmd;
+  ros::serialization::deserializeMessage(m, cmd);
+  ROS_INFO("Received takeoff command");
+  takeoff_command_pub_.publish(cmd);
+}
+
+void land_command_bridge_cb(int ID, ros::SerializedMessage &m) {
+  std_msgs::Empty cmd;
+  ros::serialization::deserializeMessage(m, cmd);
+  ROS_INFO("Received land command");
+  land_command_pub_.publish(cmd);
+}
+
+void waypoint_push_bridge_cb(int ID, ros::SerializedMessage &m) {
+  mavros_msgs::WaypointPush wp;
+  ros::serialization::deserializeMessage(m, wp);
+  ROS_INFO("Received waypoint push");
+  waypoint_push_pub_.publish(wp);
+}
+
+void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  send_to_all_groundstation_except_me("/pose_tcp", *msg);
+}
+
+void vel_sub_cb(const geometry_msgs::Twist::ConstPtr &msg) {
+  send_to_all_groundstation_except_me("/vel_tcp", *msg);
+}
+
+void battery_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg) {
+  send_to_all_groundstation_except_me("/battery_tcp", *msg);
+}
+
+void state_sub_cb(const mavros_msgs::State::ConstPtr &msg) {
+  send_to_all_drone_except_me("/state_tcp", *msg);
+  send_to_all_groundstation_except_me("/state_tcp", *msg);
+}
+
+void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg) {
+  send_to_all_groundstation_except_me("/waypoint_list_tcp", *msg);
+}
+
+void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg) {
+  send_to_all_groundstation_except_me("/video_tcp", *msg);
 }

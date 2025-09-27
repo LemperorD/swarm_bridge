@@ -27,7 +27,8 @@
 #include "time.h"
 #include "zmqpp/zmqpp.hpp"
 #include "deque"
-#include "map"
+#include <map>
+#include <utility>
 #include "ros/ros.h"
 #include "thread"
 #include "atomic"
@@ -342,7 +343,15 @@ public:
             return;
         }
         
-        callback_list[ind]->emplace(topic_name, callback);
+        auto pair = callback_list[ind]->emplace(topic_name, callback);
+        if (pair.second == false)
+        {
+            print_warning("[Bridge Warning]: Topic %s has been registered for ID:%d", topic_name.c_str(), ID);
+        }
+        else
+        {
+            print_info("[Bridge]: Register topic %s for ID:%d", topic_name.c_str(), ID);
+        }
     }
 
     /**

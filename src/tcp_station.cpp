@@ -12,6 +12,17 @@ vector<string> ip_list_;
 
 unique_ptr<ReliableBridge> bridge;
 
+ros::Subscriber takeoff_command_sub_; // 地面到飞机：起飞指令
+ros::Subscriber land_command_sub_;    // 地面到飞机：降落或返航
+ros::Subscriber waypoint_push_sub_; // 地面到飞机：航点下发
+
+ros::Publisher pose_pub_; // 飞机到地面：位姿
+ros::Publisher vel_pub_; // 飞机到地面：速度
+ros::Publisher battery_pub_; // 飞机到地面：电池状态
+ros::Publisher state_pub_; // 飞机到地面：飞控状态
+ros::Publisher waypoint_list_pub_; // 飞机到地面：当前航点列表
+ros::Publisher video_pub_; // 飞机到地面：视频流
+
 void takeoff_command_sub_cb(); // 地面到飞机：起飞指令
 void land_command_sub_cb();    // 地面到飞机：降落或返航指令
 void waypoint_push_sub_cb(); // 地面到飞机：航点下发
@@ -47,6 +58,8 @@ int main(int argc, char **argv) {
   if (is_groundstation_) self_id_in_bridge_ = remap_ground_station_id(self_id_);
 
   bridge.reset(new ReliableBridge(self_id_in_bridge_, ip_list_, id_list_, 100000));
+
+  
 
   ros::spin();
   bridge->StopThread();

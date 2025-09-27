@@ -2,7 +2,7 @@
 
   <arg name="drone_id" default="0"/>
 
-  <node pkg="swarm_bridge" name="drone_$(arg drone_id)_bridge_node_tcp" type="bridge_node_tcp" output="screen">
+  <node pkg="swarm_bridge" name="drone_$(arg drone_id)_bridge_node_tcp" type="test_tcp_drone" output="screen">
   
     <remap from="~my_odom" to="/drone_$(arg drone_id)/vins_fusion/imu_propagate"/>
     <remap from="~my_occupancy_inflate" to="/drone_$(arg drone_id)/ego_planner_node/grid_map/occupancy_inflate"/>
