@@ -330,7 +330,7 @@ public:
      *          //msg is the ros message.
      *      }
      */
-    void register_callback(int ID, string topic_name, function<void(int, ros::SerializedMessage &)> callback)
+    bool register_callback(int ID, string topic_name, function<void(int, ros::SerializedMessage &)> callback)
     {   
         int ind;
         try
@@ -340,17 +340,19 @@ public:
         catch(const std::exception& e)
         {
             print_warning("ID is not in the list!");
-            return;
+            return false;
         }
         
         auto pair = callback_list[ind]->emplace(topic_name, callback);
         if (pair.second == false)
         {
             print_warning("[Bridge Warning]: Topic %s has been registered for ID:%d", topic_name.c_str(), ID);
+            return false;
         }
         else
         {
             print_info("[Bridge]: Register topic %s for ID:%d", topic_name.c_str(), ID);
+            return true;
         }
     }
 

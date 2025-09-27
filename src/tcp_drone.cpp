@@ -14,7 +14,9 @@ unique_ptr<ReliableBridge> bridge;
 
 ros::Publisher takeoff_command_pub_; // 地面到飞机：起飞指令
 ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航
-ros::Publisher waypoint_push_pub_; // 地面到飞机：航点下发
+ros::ServiceClient waypoint_client; // 地面到飞机：航点下发
+
+mavros_msgs::WaypointPush waypoint_push_srv;
 
 ros::Subscriber pose_sub_; // 飞机到地面：位姿
 ros::Subscriber vel_sub_; // 飞机到地面：速度
@@ -25,14 +27,14 @@ ros::Subscriber video_sub_; // 飞机到地面：视频流
 
 void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：起飞指令
 void land_command_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
-void waypoint_push_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：航点下发
+void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：航点下发
 
 void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 飞机到地面：位姿
 void vel_sub_cb(const geometry_msgs::Twist::ConstPtr &msg); // 飞机到地面：速度
 void battery_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg); // 飞机到地面：电池状态
-void state_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg); // 飞机到地面：飞控状态
-void waypoint_list_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg); // 飞机到地面：当前航点列表
-void video_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg); // 飞机到地面：视频流
+void state_sub_cb(const mavros_msgs::State::ConstPtr &msg); // 飞机到地面：飞控状态
+void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg); // 飞机到地面：当前航点列表
+void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg); // 飞机到地面：视频流
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "swarm_bridge");
@@ -60,20 +62,39 @@ int main(int argc, char **argv) {
   bridge.reset(new ReliableBridge(self_id_in_bridge_, ip_list_, id_list_, 100000));
 
   // 注册回调函数
-  pose_sub_ = nh.subscribe("odom", 10, pose_sub_cb, ros::TransportHints().tcpNoDelay());
-  vel_sub_ = nh.subscribe("cmd_vel", 10, vel_sub_cb, ros::TransportHints().tcpNoDelay());
-  battery_sub_ = nh.subscribe("battery", 10, battery_sub_cb, ros::TransportHints().tcpNoDelay());
-  state_sub_ = nh.subscribe("/mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
-  waypoint_list_sub_ = nh.subscribe("waypoint_list", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
-  video_sub_ = nh.subscribe("camera/image", 10, video_sub_cb, ros::TransportHints().tcpNoDelay());
+  pose_sub_ = nh.subscribe("mavros/local_position/pose", 10, pose_sub_cb, ros::TransportHints().tcpNoDelay());
+  vel_sub_ = nh.subscribe("mavros/local_position/velocity", 10, vel_sub_cb, ros::TransportHints().tcpNoDelay());
+  battery_sub_ = nh.subscribe("mavros/battery", 10, battery_sub_cb, ros::TransportHints().tcpNoDelay());
+  state_sub_ = nh.subscribe("mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
+  waypoint_list_sub_ = nh.subscribe("mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
+  video_sub_ = nh.subscribe("camera/image", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
+
+  waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("mavros/mission/push");
+
+  // if (bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb))
+  // {
+
+  // }
+
+  // if (bridge->register_callback(self_id_in_bridge_, "/land_command_tcp", land_command_bridge_cb))
+  // {
+
+  // }
+
+  if(bridge->register_callback(self_id_in_bridge_, "/waypoint_list_tcp", waypoint_list_bridge_cb))
+  {
+    waypoint_client.call(waypoint_push_srv);
+    if (waypoint_push_srv.response.success)
+      ROS_INFO("Waypoint push success");
+    else
+      ROS_INFO("Waypoint push failed");
+  }
 
   bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb);
   bridge->register_callback(self_id_in_bridge_, "/land_command_tcp", land_command_bridge_cb);
-  bridge->register_callback(self_id_in_bridge_, "/waypoint_push_tcp", waypoint_push_bridge_cb);
 
-  takeoff_command_pub_ = nh.advertise<std_msgs::Empty>("takeoff_command", 10);
-  land_command_pub_ = nh.advertise<std_msgs::Empty>("land_command", 10);
-  waypoint_push_pub_ = nh.advertise<mavros_msgs::WaypointPush>("waypoint_push", 10);
+  takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("trigger1", 10);
+  land_command_pub_ = nh.advertise<std_msgs::String>("trigger2", 10);
 
   ros::spin();
   bridge->StopThread();
@@ -81,47 +102,52 @@ int main(int argc, char **argv) {
 }
 
 void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m) {
-  std_msgs::Empty cmd;
+  geometry_msgs::PoseStamped cmd;
   ros::serialization::deserializeMessage(m, cmd);
   ROS_INFO("Received takeoff command");
   takeoff_command_pub_.publish(cmd);
 }
 
 void land_command_bridge_cb(int ID, ros::SerializedMessage &m) {
-  std_msgs::Empty cmd;
+  geometry_msgs::PoseStamped cmd;
   ros::serialization::deserializeMessage(m, cmd);
   ROS_INFO("Received land command");
   land_command_pub_.publish(cmd);
 }
 
-void waypoint_push_bridge_cb(int ID, ros::SerializedMessage &m) {
-  mavros_msgs::WaypointPush wp;
+void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m) {
+  mavros_msgs::WaypointList wp;
   ros::serialization::deserializeMessage(m, wp);
-  ROS_INFO("Received waypoint push");
-  waypoint_push_pub_.publish(wp);
+  ROS_INFO("Received waypoint list");
+  waypoint_push_srv.request.waypoints = wp.waypoints;
 }
 
 void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
-  send_to_all_groundstation_except_me("/pose_tcp", *msg);
+  std::string topic = "/pose_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void vel_sub_cb(const geometry_msgs::Twist::ConstPtr &msg) {
-  send_to_all_groundstation_except_me("/vel_tcp", *msg);
+  std::string topic = "/vel_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void battery_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg) {
-  send_to_all_groundstation_except_me("/battery_tcp", *msg);
+  std::string topic = "/battery_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void state_sub_cb(const mavros_msgs::State::ConstPtr &msg) {
-  send_to_all_drone_except_me("/state_tcp", *msg);
-  send_to_all_groundstation_except_me("/state_tcp", *msg);
+  std::string topic = "/state_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg) {
-  send_to_all_groundstation_except_me("/waypoint_list_tcp", *msg);
+  std::string topic = "/wplist_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg) {
-  send_to_all_groundstation_except_me("/video_tcp", *msg);
+  std::string topic = "/video_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
 }

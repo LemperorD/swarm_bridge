@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 
 // 基础消息
+#include <std_msgs/String.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -19,7 +20,6 @@
 #include <mavros_msgs/CommandTOL.h>
 #include <mavros_msgs/CommandHome.h>
 #include <mavros_msgs/CommandLong.h>
-
 
 using namespace std;
 

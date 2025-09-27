@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   pcl_ros
   nav_msgs
+  mavros_msgs
 )
 
 catkin_package(
@@ -48,6 +49,12 @@ if(ENABLE_TCP)
   add_executable(test_tcp_drone
     src/test_tcp_drone.cpp
   )
+  add_executable(tcp_drone
+    src/tcp_drone.cpp
+  )
+  add_executable(tcp_station
+    src/tcp_station.cpp
+  )
   target_link_libraries(test_tcp_station
     ${catkin_LIBRARIES}
     zmq
@@ -59,6 +66,16 @@ if(ENABLE_TCP)
     zmqpp
   )
   target_link_libraries(test_tcp_drone
+    ${catkin_LIBRARIES}
+    zmq
+    zmqpp
+  )
+  target_link_libraries(tcp_drone
+    ${catkin_LIBRARIES}
+    zmq
+    zmqpp
+  )
+  target_link_libraries(tcp_station
     ${catkin_LIBRARIES}
     zmq
     zmqpp
