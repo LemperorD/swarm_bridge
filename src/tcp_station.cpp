@@ -82,27 +82,27 @@ int main(int argc, char **argv) {
     }
 
     for (int i = 0; i < drone_num_; ++i) {
-      if (bridge->register_callback(self_id_in_bridge_, "/pose_tcp_" + std::to_string(i), pose_bridge_cb))
+      if (bridge->register_callback(i, "/pose_tcp_" + std::to_string(i), pose_bridge_cb))
       {
         ROS_INFO("Register pose callback for drone %d", i);
       }
-      if (bridge->register_callback(self_id_in_bridge_, "/vel_tcp_" + std::to_string(i), vel_bridge_cb))
+      if (bridge->register_callback(i, "/vel_tcp_" + std::to_string(i), vel_bridge_cb))
       {
         ROS_INFO("Register vel callback for drone %d", i);
       }
-      if (bridge->register_callback(self_id_in_bridge_, "/battery_tcp_" + std::to_string(i), battery_bridge_cb))
+      if (bridge->register_callback(i, "/battery_tcp_" + std::to_string(i), battery_bridge_cb))
       {
         ROS_INFO("Register battery callback for drone %d", i);
       }
-      if (bridge->register_callback(self_id_in_bridge_, "/state_tcp_" + std::to_string(i), state_bridge_cb))
+      if (bridge->register_callback(i, "/state_tcp_" + std::to_string(i), state_bridge_cb))
       {
         ROS_INFO("Register state callback for drone %d", i);
       }
-      if (bridge->register_callback(self_id_in_bridge_, "/wplist_tcp_" + std::to_string(i), waypoint_list_bridge_cb))
+      if (bridge->register_callback(i, "/wplist_tcp_" + std::to_string(i), waypoint_list_bridge_cb))
       {
         ROS_INFO("Register waypoint list callback for drone %d", i);
       }
-      if (bridge->register_callback(self_id_in_bridge_, "/video_tcp_" + std::to_string(i), video_bridge_cb))
+      if (bridge->register_callback(i, "/video_tcp_" + std::to_string(i), video_bridge_cb))
       {
         ROS_INFO("Register video callback for drone %d", i);
       }

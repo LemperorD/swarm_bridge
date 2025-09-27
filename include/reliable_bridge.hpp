@@ -339,7 +339,7 @@ public:
         }
         catch(const std::exception& e)
         {
-            print_warning("ID is not in the list!");
+            print_warning("ID:%d is not in the list!", ID);
             return false;
         }
         
