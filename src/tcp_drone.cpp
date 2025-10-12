@@ -12,6 +12,10 @@
 
 // unique_ptr<ReliableBridge> bridge;
 
+std::mutex wp_mutex;
+std::condition_variable wp_cv;
+std::atomic<bool> waypoint_received(false);
+
 ros::Publisher takeoff_command_pub_; // 地面到飞机：起飞指令
 ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航
 ros::ServiceClient waypoint_client; // 地面到飞机：航点下发
@@ -81,17 +85,54 @@ int main(int argc, char **argv) {
 
   // }
 
-  if(bridge->register_callback(self_id_in_bridge_, "/wplist_"+std::to_string(self_id_), waypoint_list_bridge_cb))
+  std::thread waypoint_thread([&]() {
+    ros::Rate r(1); // 防止空循环占用CPU
+    while (ros::ok()) {
+      // 等待新航点到达
+      {
+        std::unique_lock<std::mutex> lock(wp_mutex);
+        wp_cv.wait(lock, [] { return waypoint_received.load(); });
+      }
+
+      ROS_INFO("[Drone %d] Received new waypoint list, uploading...", self_id_);
+      if (waypoint_client.call(waypoint_push_srv)) {
+        if (waypoint_push_srv.response.success)
+          ROS_INFO("[Drone %d] Waypoint upload success (%lu waypoints)",
+                   self_id_, waypoint_push_srv.request.waypoints.size());
+        else
+          ROS_WARN("[Drone %d] Waypoint upload failed", self_id_);
+      } else {
+        ROS_ERROR("[Drone %d] Failed to call MAVROS waypoint push service", self_id_);
+      }
+
+      // ✅ 上传完成后清除标志以等待下一次
+      waypoint_received = false;
+      r.sleep();
+    }
+  });
+
+  if(bridge->register_callback(drone_num_, "/wplist_"+std::to_string(self_id_), waypoint_list_bridge_cb))
   {
-    waypoint_client.call(waypoint_push_srv);
-    if (waypoint_push_srv.response.success)
-      ROS_INFO("Waypoint push success");
-    else
-      ROS_INFO("Waypoint push failed");
+    ROS_INFO("[Drone %d] Waiting for waypoint list from bridge...", self_id_);
+
+  //   // ✅ 阻塞等待，直到收到航点
+  //   {
+  //     std::unique_lock<std::mutex> lock(wp_mutex);
+  //     wp_cv.wait(lock, [] { return waypoint_received.load(); });
+  //   }
+
+  //   ROS_INFO("[Drone %d] Waypoints received, starting mission upload...", self_id_);
+
+  //   waypoint_client.call(waypoint_push_srv);
+  //   if (waypoint_push_srv.response.success)
+  //     ROS_INFO("Waypoint push success");
+  //   else
+  //     ROS_INFO("Waypoint push failed");
+  //   waypoint_received = false;
   }
 
-  bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb);
-  bridge->register_callback(self_id_in_bridge_, "/land_command_tcp", land_command_bridge_cb);
+  // bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb);
+  // bridge->register_callback(self_id_in_bridge_, "/land_command_tcp", land_command_bridge_cb);
 
   takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("trigger1", 10);
   land_command_pub_ = nh.advertise<std_msgs::String>("trigger2", 10);
@@ -120,6 +161,12 @@ void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m) {
   ros::serialization::deserializeMessage(m, wp);
   ROS_INFO("Received waypoint list");
   waypoint_push_srv.request.waypoints = wp.waypoints;
+  {
+    std::lock_guard<std::mutex> lock(wp_mutex);
+    waypoint_push_srv.request.waypoints = wp.waypoints;
+    waypoint_received = true;  // ✅ 标记已收到航点
+  }
+  wp_cv.notify_all();  // ✅ 唤醒等待线程
 }
 
 void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {

@@ -137,6 +137,7 @@ void land_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
 
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id) {
   bridge->send_msg_to_one(drone_id, "/wplist_"+std::to_string(drone_id), *msg);
+  ROS_INFO("send wplist to drone %d", drone_id);
 }
 
 void pose_bridge_cb(int ID, ros::SerializedMessage &m) {
