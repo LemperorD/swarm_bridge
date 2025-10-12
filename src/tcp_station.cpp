@@ -34,7 +34,7 @@ std::vector<ros::Subscriber> waypoint_list_subs_; // 地面到飞机：航点下
 
 void takeoff_command_sub_cb(const std_msgs::String::ConstPtr &msg); // 地面到飞机：起飞指令
 void land_command_sub_cb(const std_msgs::String::ConstPtr &msg);    // 地面到飞机：降落或返航指令
-void waypoint_list_sub_cb(const std_msgs::String::ConstPtr &msg); // 地面到飞机：航点下发
+void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id); // 地面到飞机：航点下发
 
 void pose_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：位姿
 void vel_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：速度
@@ -85,9 +85,10 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < drone_num_; ++i) {
       std::string topic_name = "/swarm_bridge/drone_" + std::to_string(i) + "/mission_upload";
-      waypoint_list_subs_.push_back(nh.subscribe(topic_name, 10, 
-        boost::bind(&waypoint_list_sub_cb, boost::placeholders::_1, i), 
-        ros::TransportHints().tcpNoDelay()));
+      ros::SubscribeOptions ops;
+      ops.init<mavros_msgs::WaypointList>(topic_name, 10, boost::bind(&waypoint_list_sub_cb, _1, i));
+      ops.transport_hints = ros::TransportHints().tcpNoDelay();
+      waypoint_list_subs_.push_back(nh.subscribe(ops));
       ROS_INFO("Subscribed to drone %d: %s", i, topic_name.c_str());
     }
 
@@ -120,7 +121,6 @@ int main(int argc, char **argv) {
 
     takeoff_command_sub_ = nh.subscribe("takeoff_command", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
     land_command_sub_ = nh.subscribe("land_command", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    waypoint_list_sub_ = nh.subscribe("waypoint_push", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();
@@ -135,7 +135,7 @@ void land_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
   send_to_all_drone_except_me("/land_command_tcp", *msg);
 }
 
-void waypoint_list_sub_cb(const std_msgs::String::ConstPtr &msg, int drone_id) {
+void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id) {
   bridge->send_msg_to_one(drone_id, "/wplist_"+std::to_string(drone_id), *msg);
 }
 
