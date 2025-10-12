@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
   // }
 
-  if(bridge->register_callback(self_id_in_bridge_, "/waypoint_list_tcp", waypoint_list_bridge_cb))
+  if(bridge->register_callback(self_id_in_bridge_, "/wplist_"+std::to_string(self_id_), waypoint_list_bridge_cb))
   {
     waypoint_client.call(waypoint_push_srv);
     if (waypoint_push_srv.response.success)

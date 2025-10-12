@@ -85,7 +85,9 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < drone_num_; ++i) {
       std::string topic_name = "/swarm_bridge/drone_" + std::to_string(i) + "/mission_upload";
-      waypoint_list_subs_.push_back(nh.subscribe(topic_name, 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay()));
+      waypoint_list_subs_.push_back(nh.subscribe(topic_name, 10, 
+        boost::bind(&waypoint_list_sub_cb, boost::placeholders::_1, i), 
+        ros::TransportHints().tcpNoDelay()));
       ROS_INFO("Subscribed to drone %d: %s", i, topic_name.c_str());
     }
 
@@ -133,8 +135,8 @@ void land_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
   send_to_all_drone_except_me("/land_command_tcp", *msg);
 }
 
-void waypoint_list_sub_cb(const std_msgs::String::ConstPtr &msg) {
-  send_to_all_drone_except_me("/waypoint_list_tcp", *msg);
+void waypoint_list_sub_cb(const std_msgs::String::ConstPtr &msg, int drone_id) {
+  bridge->send_msg_to_one(drone_id, "/wplist_"+std::to_string(drone_id), *msg);
 }
 
 void pose_bridge_cb(int ID, ros::SerializedMessage &m) {
