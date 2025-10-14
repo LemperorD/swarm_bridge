@@ -14,9 +14,12 @@ ros::Publisher* gps_pubs = nullptr;
 
 std::vector<ros::Subscriber> waypoint_list_subs_; // 地面到飞机：航点下发
 
-void takeoff_command_sub_cb(const std_msgs::String::ConstPtr &msg); // 地面到飞机：起飞指令
-void land_command_sub_cb(const std_msgs::String::ConstPtr &msg);    // 地面到飞机：降落或返航指令
+void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 地面到飞机：起飞指令
+void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);    // 地面到飞机：降落或返航指令
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id); // 地面到飞机：航点下发
+
+// void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int drone_id); // 地面到飞机：起飞指令
+// void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int drone_id);    // 地面到飞机：降落或返航指令
 
 void pose_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：位姿
 void vel_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：速度
@@ -109,20 +112,20 @@ int main(int argc, char **argv) {
       }
     }
 
-    takeoff_command_sub_ = nh.subscribe("takeoff_command", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    land_command_sub_ = nh.subscribe("land_command", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    takeoff_command_sub_ = nh.subscribe("/trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    land_command_sub_ = nh.subscribe("/trigger2", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();
   return 0;
 }
 
-void takeoff_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
-  send_to_all_drone_except_me("/takeoff_command_tcp", *msg);
+void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  send_to_all_drone_except_me("/takeoff_tcp", *msg);
 }
 
-void land_command_sub_cb(const std_msgs::String::ConstPtr &msg) {
-  send_to_all_drone_except_me("/land_command_tcp", *msg);
+void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  send_to_all_drone_except_me("/land_tcp", *msg);
 }
 
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id) {
