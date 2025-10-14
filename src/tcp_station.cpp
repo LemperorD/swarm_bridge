@@ -1,27 +1,8 @@
-#include "reliable_bridge.hpp"
 #include "tcp_drone_station.hpp"
-
-// int self_id_;
-// int self_id_in_bridge_;
-// int drone_num_;
-// int ground_station_num_;
-// bool is_groundstation_;
-
-// vector<int> id_list_;
-// vector<string> ip_list_;
-
-// unique_ptr<ReliableBridge> bridge;
 
 ros::Subscriber takeoff_command_sub_; // 地面到飞机：起飞指令
 ros::Subscriber land_command_sub_;    // 地面到飞机：降落或返航
 ros::Subscriber waypoint_list_sub_; // 地面到飞机：航点下发
-
-// ros::Publisher pose_pub_; // 飞机到地面：位姿
-// ros::Publisher vel_pub_; // 飞机到地面：速度
-// ros::Publisher battery_pub_; // 飞机到地面：电池状态
-// ros::Publisher state_pub_; // 飞机到地面：飞控状态
-// ros::Publisher waypoint_list_pub_; // 飞机到地面：当前航点列表
-// ros::Publisher video_pub_; // 飞机到地面：视频流
 
 ros::Publisher* pose_pubs = nullptr;
 ros::Publisher* vel_pubs = nullptr;
@@ -29,6 +10,7 @@ ros::Publisher* battery_pubs = nullptr;
 ros::Publisher* state_pubs = nullptr;
 ros::Publisher* waypoint_list_pubs = nullptr;
 ros::Publisher* video_pubs = nullptr;
+ros::Publisher* gps_pubs = nullptr;
 
 std::vector<ros::Subscriber> waypoint_list_subs_; // 地面到飞机：航点下发
 
@@ -42,6 +24,7 @@ void battery_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：
 void state_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：飞控状态
 void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：当前航点列表
 void video_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：视频流
+void gps_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：GPS消息
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "swarm_bridge");
@@ -81,6 +64,7 @@ int main(int argc, char **argv) {
       state_pubs[i] = nh.advertise<mavros_msgs::State>("state_" + std::to_string(i), 10);
       waypoint_list_pubs[i] = nh.advertise<mavros_msgs::WaypointList>("wplist_" + std::to_string(i), 10);
       video_pubs[i] = nh.advertise<sensor_msgs::Image>("video_" + std::to_string(i), 10);
+      gps_pubs[i] = nh.advertise<sensor_msgs::NavSatFix>("gps_" + std::to_string(i), 10);
     }
 
     for (int i = 0; i < drone_num_; ++i) {
@@ -116,6 +100,10 @@ int main(int argc, char **argv) {
       if (bridge->register_callback(i, "/video_tcp_" + std::to_string(i), video_bridge_cb))
       {
         ROS_INFO("Register video callback for drone %d", i);
+      }
+      if (bridge->register_callback(i, "/gps_tcp_" + std::to_string(i), gps_bridge_cb))
+      {
+        ROS_INFO("Register gps callback for drone %d", i);
       }
     }
 
@@ -174,4 +162,10 @@ void video_bridge_cb(int ID, ros::SerializedMessage &m) {
   sensor_msgs::Image video_msg_;
   ros::serialization::deserializeMessage(m, video_msg_);
   video_pubs[ID].publish(video_msg_);
+}
+
+void gps_bridge_cb(int ID, ros::SerializedMessage &m) {
+  sensor_msgs::NavSatFix gps_msg_;
+  ros::serialization::deserializeMessage(m, gps_msg_);
+  gps_pubs[ID].publish(gps_msg_);
 }

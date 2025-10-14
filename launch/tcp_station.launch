@@ -6,10 +6,10 @@
       <param name="self_id" value="$(arg station_id)"/>
       <param name="is_ground_station" value="true"/>
       <param name="drone_num" value="16"/>
-      <param name="drone_ip_0" value="192.168.1.21" type="string"/>
-      <param name="drone_ip_1" value="192.168.1.22" type="string"/>
-      <param name="drone_ip_2" value="192.168.1.23" type="string"/>
-      <param name="drone_ip_3" value="192.168.1.24" type="string"/>
+      <param name="drone_ip_0" value="192.168.1.24" type="string"/>
+      <param name="drone_ip_1" value="192.168.1.23" type="string"/>
+      <param name="drone_ip_2" value="192.168.1.21" type="string"/>
+      <param name="drone_ip_3" value="192.168.1.22" type="string"/>
       <param name="drone_ip_4" value="192.168.1.25" type="string"/>
       <param name="drone_ip_5" value="192.168.1.26" type="string"/>
       <param name="drone_ip_6" value="192.168.1.27" type="string"/>

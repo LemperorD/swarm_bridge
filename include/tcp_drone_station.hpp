@@ -2,6 +2,7 @@
 #define TCP_DRONE_STATION_HPP
 
 #include <ros/ros.h>
+#include "reliable_bridge.hpp"
 
 // 基础消息
 #include <std_msgs/String.h>
@@ -10,6 +11,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <visualization_msgs/MarkerArray.h>
 
 // MAVROS 专用

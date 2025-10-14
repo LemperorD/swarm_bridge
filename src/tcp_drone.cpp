@@ -1,16 +1,5 @@
-#include "reliable_bridge.hpp"
 #include "tcp_drone_station.hpp"
-
-// int self_id_;
-// int self_id_in_bridge_;
-// int drone_num_;
-// int ground_station_num_;
-// bool is_groundstation_;
-
-// vector<int> id_list_;
-// vector<string> ip_list_;
-
-// unique_ptr<ReliableBridge> bridge;
+#include <thread>
 
 std::mutex wp_mutex;
 std::condition_variable wp_cv;
@@ -28,6 +17,7 @@ ros::Subscriber battery_sub_; // 飞机到地面：电池状态
 ros::Subscriber state_sub_; // 飞机到地面：飞控状态
 ros::Subscriber waypoint_list_sub_; // 飞机到地面：当前航点列表
 ros::Subscriber video_sub_; // 飞机到地面：视频流
+ros::Subscriber gps_sub_ ; //飞机到地面：GPS信息
 
 void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：起飞指令
 void land_command_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
@@ -39,6 +29,7 @@ void battery_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg); // 飞机�
 void state_sub_cb(const mavros_msgs::State::ConstPtr &msg); // 飞机到地面：飞控状态
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg); // 飞机到地面：当前航点列表
 void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg); // 飞机到地面：视频流
+void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg);
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "swarm_bridge");
@@ -72,6 +63,7 @@ int main(int argc, char **argv) {
   state_sub_ = nh.subscribe("/mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
   waypoint_list_sub_ = nh.subscribe("/mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
   video_sub_ = nh.subscribe("/ruiyan_ros_sdk", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
+  gps_sub_ = nh.subscribe("/mavros/global_position/global", 10, gps_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
 
   waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("/mavros/mission/push");
 
@@ -114,21 +106,6 @@ int main(int argc, char **argv) {
   if(bridge->register_callback(drone_num_, "/wplist_"+std::to_string(self_id_), waypoint_list_bridge_cb))
   {
     ROS_INFO("[Drone %d] Waiting for waypoint list from bridge...", self_id_);
-
-  //   // ✅ 阻塞等待，直到收到航点
-  //   {
-  //     std::unique_lock<std::mutex> lock(wp_mutex);
-  //     wp_cv.wait(lock, [] { return waypoint_received.load(); });
-  //   }
-
-  //   ROS_INFO("[Drone %d] Waypoints received, starting mission upload...", self_id_);
-
-  //   waypoint_client.call(waypoint_push_srv);
-  //   if (waypoint_push_srv.response.success)
-  //     ROS_INFO("Waypoint push success");
-  //   else
-  //     ROS_INFO("Waypoint push failed");
-  //   waypoint_received = false;
   }
 
   // bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb);
@@ -196,5 +173,10 @@ void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg) {
 
 void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg) {
   std::string topic = "/video_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
+}
+
+void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg) {
+  std::string topic = "/gps_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
