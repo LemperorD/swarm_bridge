@@ -57,6 +57,8 @@ int main(int argc, char **argv) {
     state_pubs = new ros::Publisher[drone_num_];
     waypoint_list_pubs = new ros::Publisher[drone_num_];
     video_pubs = new ros::Publisher[drone_num_];
+    gps_pubs = new ros::Publisher[drone_num_];
+
     for (int i = 0; i < drone_num_; ++i) {
       pose_pubs[i] = nh.advertise<geometry_msgs::PoseStamped>("pose_" + std::to_string(i), 10);
       vel_pubs[i] = nh.advertise<geometry_msgs::Twist>("vel_" + std::to_string(i), 10);
