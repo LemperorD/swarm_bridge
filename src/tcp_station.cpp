@@ -144,7 +144,7 @@ void mission_mode_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
 
 void clear_wp_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
   ROS_INFO("clearing wplist command received, sending to all drones.");
-  send_to_all_drone_except_me("/land_tcp", *msg);
+  send_to_all_drone_except_me("/clear_tcp", *msg);
 }
 
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id) {
