@@ -108,8 +108,8 @@ int main(int argc, char **argv) {
     ROS_INFO("[Drone %d] Waiting for waypoint list from bridge...", self_id_);
   }
 
-  bridge->register_callback(self_id_in_bridge_, "/takeoff_tcp", takeoff_command_bridge_cb);
-  bridge->register_callback(self_id_in_bridge_, "/land_tcp", land_command_bridge_cb);
+  bridge->register_callback(drone_num_, "/takeoff_tcp", takeoff_command_bridge_cb);
+  bridge->register_callback(drone_num_, "/land_tcp", land_command_bridge_cb);
 
   takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger", 10);
   land_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger2", 10);

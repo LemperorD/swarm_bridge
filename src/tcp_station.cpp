@@ -121,10 +121,12 @@ int main(int argc, char **argv) {
 }
 
 void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  ROS_ERROR("Takeoff command received, sending to all drones except me.");
   send_to_all_drone_except_me("/takeoff_tcp", *msg);
 }
 
 void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  ROS_INFO("Land command received, sending to all drones except me.");
   send_to_all_drone_except_me("/land_tcp", *msg);
 }
 
