@@ -39,10 +39,10 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh("~");
 
     // 参数读取
-    nh.param("self_id", self_id_, -1);
+    nh.param("self_id", self_id_, 16);
     nh.param("is_ground_station", is_groundstation_, false);
-    nh.param("drone_num", drone_num_, 1);
-    nh.param("ground_station_num", ground_station_num_, 0);
+    nh.param("drone_num", drone_num_, 16);
+    nh.param("ground_station_num", ground_station_num_, 1);
 
     // 配置 ID & IP
     id_list_.resize(drone_num_ + ground_station_num_);
@@ -119,8 +119,8 @@ int main(int argc, char **argv) {
 
     takeoff_command_sub_ = nh.subscribe("/takeoff_trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
     land_command_sub_ = nh.subscribe("/land_trigger", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    mission_sub_ = nh.subscribe("/mission_trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    clear_wp_sub_ = nh.subscribe("/clear_trigger", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    mission_sub_ = nh.subscribe("/mission_trigger", 10, mission_mode_sub_cb, ros::TransportHints().tcpNoDelay());
+    clear_wp_sub_ = nh.subscribe("/clear_trigger", 10, clear_wp_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();
@@ -137,7 +137,7 @@ void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
   send_to_all_drone_except_me("/land_tcp", *msg);
 }
 
-void mission_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+void mission_mode_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
   ROS_INFO("mission mode setting command received, sending to all drones.");
   send_to_all_drone_except_me("/mission_tcp", *msg);
 }
