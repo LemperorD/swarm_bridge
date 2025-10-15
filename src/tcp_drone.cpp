@@ -6,7 +6,10 @@ std::condition_variable wp_cv;
 std::atomic<bool> waypoint_received(false);
 
 ros::Publisher takeoff_command_pub_; // 地面到飞机：起飞指令
-ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航
+ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航指令
+ros::Publisher mission_mode_pub_; //地面到飞机：切换任务模式
+ros::Publisher clear_wp_pub_; //地面到飞机：清除航点
+
 ros::ServiceClient waypoint_client; // 地面到飞机：航点下发
 
 mavros_msgs::WaypointPush waypoint_push_srv;
@@ -21,6 +24,9 @@ ros::Subscriber gps_sub_ ; //飞机到地面：GPS信息
 
 void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：起飞指令
 void land_command_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
+void mission_mode_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
+void clear_wp_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
+
 void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：航点下发
 
 void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 飞机到地面：位姿
@@ -67,12 +73,12 @@ int main(int argc, char **argv) {
 
   waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("/mavros/mission/push");
 
-  // if (bridge->register_callback(self_id_in_bridge_, "/takeoff_command_tcp", takeoff_command_bridge_cb))
+  // if (bridge->register_callback(self_id_in_bridge_, "/takeoff_tcp", takeoff_command_bridge_cb))
   // {
 
   // }
 
-  // if (bridge->register_callback(self_id_in_bridge_, "/land_command_tcp", land_command_bridge_cb))
+  // if (bridge->register_callback(self_id_in_bridge_, "/land_tcp", land_command_bridge_cb))
   // {
 
   // }
@@ -110,9 +116,13 @@ int main(int argc, char **argv) {
 
   bridge->register_callback(drone_num_, "/takeoff_tcp", takeoff_command_bridge_cb);
   bridge->register_callback(drone_num_, "/land_tcp", land_command_bridge_cb);
+  bridge->register_callback(drone_num_, "/mission_tcp", mission_mode_bridge_cb);
+  bridge->register_callback(drone_num_, "/clear_tcp", clear_wp_bridge_cb);
 
-  takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger", 10);
-  land_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger2", 10);
+  takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_drone", 10);
+  land_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_land", 10);
+  mission_mode_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_mission", 10);
+  clear_wp_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_clear", 10);
 
   ros::spin();
   bridge->StopThread();
@@ -131,6 +141,20 @@ void land_command_bridge_cb(int ID, ros::SerializedMessage &m) {
   ros::serialization::deserializeMessage(m, cmd);
   ROS_INFO("Received land command");
   land_command_pub_.publish(cmd);
+}
+
+void mission_mode_bridge_cb(int ID, ros::SerializedMessage &m) {
+  geometry_msgs::PoseStamped cmd;
+  ros::serialization::deserializeMessage(m, cmd);
+  ROS_INFO("change to mission mode");
+  mission_mode_pub_.publish(cmd);
+}
+
+void clear_wp_bridge_cb(int ID, ros::SerializedMessage &m) {
+  geometry_msgs::PoseStamped cmd;
+  ros::serialization::deserializeMessage(m, cmd);
+  ROS_INFO("Clearing wplist...");
+  clear_wp_pub_.publish(cmd);
 }
 
 void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m) {

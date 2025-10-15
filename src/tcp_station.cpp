@@ -3,6 +3,8 @@
 ros::Subscriber takeoff_command_sub_; // 地面到飞机：起飞指令
 ros::Subscriber land_command_sub_;    // 地面到飞机：降落或返航
 ros::Subscriber waypoint_list_sub_; // 地面到飞机：航点下发
+ros::Subscriber mission_sub_; // 地面到飞机：切换任务模式
+ros::Subscriber clear_wp_sub_; // 地面到飞机：清除航点
 
 ros::Publisher* pose_pubs = nullptr;
 ros::Publisher* vel_pubs = nullptr;
@@ -16,6 +18,9 @@ std::vector<ros::Subscriber> waypoint_list_subs_; // 地面到飞机：航点下
 
 void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 地面到飞机：起飞指令
 void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);    // 地面到飞机：降落或返航指令
+void mission_mode_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 地面到飞机：切换任务模式
+void clear_wp_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);    // 地面到飞机：清除当前航点
+
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id); // 地面到飞机：航点下发
 
 // void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg, int drone_id); // 地面到飞机：起飞指令
@@ -114,6 +119,8 @@ int main(int argc, char **argv) {
 
     takeoff_command_sub_ = nh.subscribe("/trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
     land_command_sub_ = nh.subscribe("/trigger2", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    mission_sub_ = nh.subscribe("/trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    clear_wp_sub_ = nh.subscribe("/trigger2", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();
