@@ -117,10 +117,10 @@ int main(int argc, char **argv) {
       }
     }
 
-    takeoff_command_sub_ = nh.subscribe("/trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    land_command_sub_ = nh.subscribe("/trigger2", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    mission_sub_ = nh.subscribe("/trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
-    clear_wp_sub_ = nh.subscribe("/trigger2", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    takeoff_command_sub_ = nh.subscribe("/takeoff_trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    land_command_sub_ = nh.subscribe("/land_trigger", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    mission_sub_ = nh.subscribe("/mission_trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
+    clear_wp_sub_ = nh.subscribe("/clear_trigger", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();
@@ -128,12 +128,22 @@ int main(int argc, char **argv) {
 }
 
 void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
-  ROS_ERROR("Takeoff command received, sending to all drones except me.");
+  ROS_ERROR("Takeoff command received, sending to all drones.");
   send_to_all_drone_except_me("/takeoff_tcp", *msg);
 }
 
 void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
-  ROS_INFO("Land command received, sending to all drones except me.");
+  ROS_INFO("Land command received, sending to all drones.");
+  send_to_all_drone_except_me("/land_tcp", *msg);
+}
+
+void mission_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  ROS_INFO("mission mode setting command received, sending to all drones.");
+  send_to_all_drone_except_me("/mission_tcp", *msg);
+}
+
+void clear_wp_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  ROS_INFO("clearing wplist command received, sending to all drones.");
   send_to_all_drone_except_me("/land_tcp", *msg);
 }
 
