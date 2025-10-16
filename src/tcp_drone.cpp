@@ -9,6 +9,7 @@ ros::Publisher takeoff_command_pub_; // 地面到飞机：起飞指令
 ros::Publisher land_command_pub_;    // 地面到飞机：降落或返航指令
 ros::Publisher mission_mode_pub_; //地面到飞机：切换任务模式
 ros::Publisher clear_wp_pub_; //地面到飞机：清除航点
+ros::Publisher ryCtrl_pub_; //地面到飞机：吊舱角度控制指令
 
 ros::ServiceClient waypoint_client; // 地面到飞机：航点下发
 
@@ -21,11 +22,13 @@ ros::Subscriber state_sub_; // 飞机到地面：飞控状态
 ros::Subscriber waypoint_list_sub_; // 飞机到地面：当前航点列表
 ros::Subscriber video_sub_; // 飞机到地面：视频流
 ros::Subscriber gps_sub_ ; //飞机到地面：GPS信息
+ros::Subscriber ryState_sub_; // 飞机到地面：吊舱当前角度
 
 void takeoff_command_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：起飞指令
 void land_command_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
 void mission_mode_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
-void clear_wp_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：降落或返航指令
+void clear_wp_bridge_cb(int ID, ros::SerializedMessage &m);    // 地面到飞机：清除航点
+void ryCtrl_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：吊舱角度控制指令
 
 void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m); // 地面到飞机：航点下发
 
@@ -36,6 +39,7 @@ void state_sub_cb(const mavros_msgs::State::ConstPtr &msg); // 飞机到地面�
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg); // 飞机到地面：当前航点列表
 void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg); // 飞机到地面：视频流
 void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg); //飞机到地面：GPS信息
+void ryState_sub_cb(const ruiyan_ros_sdk::RuiyanState::ConstPtr &msg); // 飞机到地面：吊舱当前角度
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "swarm_bridge");
@@ -69,7 +73,8 @@ int main(int argc, char **argv) {
   state_sub_ = nh.subscribe("/mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
   waypoint_list_sub_ = nh.subscribe("/mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
   video_sub_ = nh.subscribe("/ruiyan_ros_sdk", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
-  gps_sub_ = nh.subscribe("/mavros/global_position/global", 10, gps_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
+  gps_sub_ = nh.subscribe("/mavros/global_position/global", 10, gps_sub_cb, ros::TransportHints().tcpNoDelay());
+  ryState_sub_ = nh.subscribe("/RuiyanState", 10, ryState_sub_cb, ros::TransportHints().tcpNoDelay()); 
 
   waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("/mavros/mission/push");
 
@@ -118,6 +123,7 @@ int main(int argc, char **argv) {
   bridge->register_callback(drone_num_, "/land_tcp", land_command_bridge_cb);
   bridge->register_callback(drone_num_, "/mission_tcp", mission_mode_bridge_cb);
   bridge->register_callback(drone_num_, "/clear_tcp", clear_wp_bridge_cb);
+  bridge->register_callback(drone_num_, "/RuiyanCtrl", ryCtrl_bridge_cb);
 
   takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_drone", 10);
   land_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_land", 10);
@@ -170,6 +176,13 @@ void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m) {
   wp_cv.notify_all();  // ✅ 唤醒等待线程
 }
 
+void ryCtrl_bridge_cb(int ID, ros::SerializedMessage &m) {
+  ruiyan_ros_sdk::RuiyanControl cmd;
+  ros::serialization::deserializeMessage(m, cmd);
+  ROS_INFO("Received Ruiyan Ctrl command");
+  ryCtrl_pub_.publish(cmd);
+}
+
 void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
   std::string topic = "/pose_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
@@ -202,5 +215,10 @@ void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg) {
 
 void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg) {
   std::string topic = "/gps_tcp_" + std::to_string(self_id_in_bridge_);
+  send_to_all_groundstation_except_me(topic, *msg);
+}
+
+void ryState_sub_cb(const ruiyan_ros_sdk::RuiyanState::ConstPtr &msg) {
+  std::string topic = "/tyState_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }

@@ -11,7 +11,7 @@
       <param name="drone_ip_2" value="192.168.1.21" type="string"/>
       <param name="drone_ip_3" value="192.168.1.22" type="string"/>
       <param name="drone_ip_4" value="192.168.1.25" type="string"/>
-      <param name="drone_ip_5" value="192.168.1.26" type="string"/>
+      <param name="drone_ip_5" value="192.168.137.154" type="string"/>
       <param name="drone_ip_6" value="192.168.1.27" type="string"/>
       <param name="drone_ip_7" value="192.168.1.28" type="string"/>
       <param name="drone_ip_8" value="192.168.1.35" type="string"/>
@@ -25,7 +25,7 @@
 
 
       <param name="ground_station_num" value="1"/>
-      <param name="ground_station_ip_0" value="192.168.1.100" type="string"/>
+      <param name="ground_station_ip_0" value="192.168.137.1" type="string"/>
     </node>
 
 </launch>
