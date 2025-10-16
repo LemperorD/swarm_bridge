@@ -5,6 +5,7 @@ ros::Subscriber land_command_sub_;    // 地面到飞机：降落或返航
 ros::Subscriber waypoint_list_sub_; // 地面到飞机：航点下发
 ros::Subscriber mission_sub_; // 地面到飞机：切换任务模式
 ros::Subscriber clear_wp_sub_; // 地面到飞机：清除航点
+ros::Subscriber ryCtrl_sub_; // 地面到飞机：吊舱角度控制指令
 
 ros::Publisher* pose_pubs = nullptr;
 ros::Publisher* vel_pubs = nullptr;
@@ -13,13 +14,15 @@ ros::Publisher* state_pubs = nullptr;
 ros::Publisher* waypoint_list_pubs = nullptr;
 ros::Publisher* video_pubs = nullptr;
 ros::Publisher* gps_pubs = nullptr;
+ros::Publisher* ryState_pub_ = nullptr; // 飞机到地面：吊舱当前角度
 
 std::vector<ros::Subscriber> waypoint_list_subs_; // 地面到飞机：航点下发
 
 void takeoff_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 地面到飞机：起飞指令
 void land_command_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);    // 地面到飞机：降落或返航指令
 void mission_mode_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg); // 地面到飞机：切换任务模式
-void clear_wp_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);    // 地面到飞机：清除当前航点
+void clear_wp_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg);    // 
+void ryCtrl_sub_cb(const ruiyan_ros_sdk::RuiyanControl::ConstPtr &msg); // 地面到飞机：吊舱角度控制指令
 
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id); // 地面到飞机：航点下发
 
@@ -33,6 +36,7 @@ void state_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：�
 void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：当前航点列表
 void video_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：视频流
 void gps_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：GPS消息
+void ryState_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：吊舱当前角度
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "swarm_bridge");
@@ -66,6 +70,7 @@ int main(int argc, char **argv) {
     waypoint_list_pubs = new ros::Publisher[drone_num_];
     video_pubs = new ros::Publisher[drone_num_];
     gps_pubs = new ros::Publisher[drone_num_];
+    ryState_pub_ = new ros::Publisher[drone_num_];
 
     for (int i = 0; i < drone_num_; ++i) {
       pose_pubs[i] = nh.advertise<geometry_msgs::PoseStamped>("pose_" + std::to_string(i), 10);
@@ -75,6 +80,7 @@ int main(int argc, char **argv) {
       waypoint_list_pubs[i] = nh.advertise<mavros_msgs::WaypointList>("wplist_" + std::to_string(i), 10);
       video_pubs[i] = nh.advertise<sensor_msgs::Image>("video_" + std::to_string(i), 10);
       gps_pubs[i] = nh.advertise<sensor_msgs::NavSatFix>("gps_" + std::to_string(i), 10);
+      ryState_pub_[i] = nh.advertise<ruiyan_ros_sdk::RuiyanState>("ryState_" + std::to_string(i), 10);
     }
 
     for (int i = 0; i < drone_num_; ++i) {
@@ -115,12 +121,17 @@ int main(int argc, char **argv) {
       {
         ROS_INFO("Register gps callback for drone %d", i);
       }
+      if (bridge->register_callback(i, "/ryState_tcp_" + std::to_string(i), ryState_bridge_cb))
+      {
+        ROS_INFO("Register ruiyan state callback for drone %d", i);
+      }
     }
 
     takeoff_command_sub_ = nh.subscribe("/takeoff_trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
     land_command_sub_ = nh.subscribe("/land_trigger", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
     mission_sub_ = nh.subscribe("/mission_trigger", 10, mission_mode_sub_cb, ros::TransportHints().tcpNoDelay());
     clear_wp_sub_ = nh.subscribe("/clear_trigger", 10, clear_wp_sub_cb, ros::TransportHints().tcpNoDelay());
+    ryCtrl_sub_ = nh.subscribe("/RuiyanControl", 10, ryCtrl_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();
@@ -150,6 +161,11 @@ void clear_wp_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg, int drone_id) {
   bridge->send_msg_to_one(drone_id, "/wplist_"+std::to_string(drone_id), *msg);
   ROS_INFO("send wplist to drone %d", drone_id);
+}
+
+void ryCtrl_sub_cb(const ruiyan_ros_sdk::RuiyanControl::ConstPtr &msg) {
+  bridge->send_msg_to_all("/ryCtrl_tcp", *msg);
+  ROS_INFO("send ruiyan control command to all drones");
 }
 
 void pose_bridge_cb(int ID, ros::SerializedMessage &m) {
@@ -192,4 +208,10 @@ void gps_bridge_cb(int ID, ros::SerializedMessage &m) {
   sensor_msgs::NavSatFix gps_msg_;
   ros::serialization::deserializeMessage(m, gps_msg_);
   gps_pubs[ID].publish(gps_msg_);
+}
+
+void ryState_bridge_cb(int ID, ros::SerializedMessage &m) {
+  ruiyan_ros_sdk::RuiyanState ryState_msg_;
+  ros::serialization::deserializeMessage(m, ryState_msg_);
+  ryState_pub_[ID].publish(ryState_msg_);
 }

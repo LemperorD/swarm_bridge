@@ -23,6 +23,10 @@
 #include <mavros_msgs/CommandHome.h>
 #include <mavros_msgs/CommandLong.h>
 
+//睿沿SDK
+#include "ruiyan_ros_sdk/RuiyanControl.h"
+#include "ruiyan_ros_sdk/RuiyanState.h"
+
 using namespace std;
 
 int self_id_;

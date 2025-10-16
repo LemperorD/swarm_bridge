@@ -35,7 +35,7 @@ void battery_sub_cb(const mavros_msgs::BatteryStatus::ConstPtr &msg); // 飞机�
 void state_sub_cb(const mavros_msgs::State::ConstPtr &msg); // 飞机到地面：飞控状态
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg); // 飞机到地面：当前航点列表
 void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg); // 飞机到地面：视频流
-void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg);
+void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg); //飞机到地面：GPS信息
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "swarm_bridge");
