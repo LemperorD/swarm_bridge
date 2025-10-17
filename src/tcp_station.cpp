@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
     land_command_sub_ = nh.subscribe("/land_trigger", 10, land_command_sub_cb, ros::TransportHints().tcpNoDelay());
     mission_sub_ = nh.subscribe("/mission_trigger", 10, mission_mode_sub_cb, ros::TransportHints().tcpNoDelay());
     clear_wp_sub_ = nh.subscribe("/clear_trigger", 10, clear_wp_sub_cb, ros::TransportHints().tcpNoDelay());
-    ryCtrl_sub_ = nh.subscribe("/RuiyanControl", 10, ryCtrl_sub_cb, ros::TransportHints().tcpNoDelay());
+    ryCtrl_sub_ = nh.subscribe("/RuiyanCtrl", 10, ryCtrl_sub_cb, ros::TransportHints().tcpNoDelay());
 
   ros::spin();
   bridge->StopThread();

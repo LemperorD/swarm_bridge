@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
   waypoint_list_sub_ = nh.subscribe("/mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
   video_sub_ = nh.subscribe("/ruiyan_ros_sdk", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
   gps_sub_ = nh.subscribe("/mavros/global_position/global", 10, gps_sub_cb, ros::TransportHints().tcpNoDelay());
-  ryState_sub_ = nh.subscribe("/RuiyanState", 10, ryState_sub_cb, ros::TransportHints().tcpNoDelay()); 
+  ryState_sub_ = nh.subscribe("/state_info", 10, ryState_sub_cb, ros::TransportHints().tcpNoDelay()); 
 
   waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("/mavros/mission/push");
 
@@ -123,12 +123,13 @@ int main(int argc, char **argv) {
   bridge->register_callback(drone_num_, "/land_tcp", land_command_bridge_cb);
   bridge->register_callback(drone_num_, "/mission_tcp", mission_mode_bridge_cb);
   bridge->register_callback(drone_num_, "/clear_tcp", clear_wp_bridge_cb);
-  bridge->register_callback(drone_num_, "/RuiyanCtrl", ryCtrl_bridge_cb);
+  bridge->register_callback(drone_num_, "/ryCtrl_tcp", ryCtrl_bridge_cb);
 
   takeoff_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_drone", 10);
   land_command_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_land", 10);
   mission_mode_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_mission", 10);
   clear_wp_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/trigger_clear", 10);
+  ryCtrl_pub_ = nh.advertise<ruiyan_ros_sdk::RuiyanControl>("/RuiyanControl", 10);
 
   ros::spin();
   bridge->StopThread();
@@ -219,6 +220,6 @@ void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg) {
 }
 
 void ryState_sub_cb(const ruiyan_ros_sdk::RuiyanState::ConstPtr &msg) {
-  std::string topic = "/tyState_tcp_" + std::to_string(self_id_in_bridge_);
+  std::string topic = "/ryState_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
