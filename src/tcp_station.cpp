@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < drone_num_; ++i) {
       std::string topic_name = "/drone_" + std::to_string(i) + "/RuiyanCtrl";
       ros::SubscribeOptions ops;
-      ops.init<mavros_msgs::WaypointList>(topic_name, 10, boost::bind(&ryCtrl_sub_cb, _1, i));
+      ops.init<ruiyan_ros_sdk::RuiyanControl>(topic_name, 10, boost::bind(&ryCtrl_sub_cb, _1, i));
       ops.transport_hints = ros::TransportHints().tcpNoDelay();
       ryCtrl_subs_.push_back(nh.subscribe(ops));
       ROS_INFO("Subscribed to drone %d: %s", i, topic_name.c_str());
