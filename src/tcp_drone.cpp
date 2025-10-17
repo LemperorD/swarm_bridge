@@ -119,6 +119,11 @@ int main(int argc, char **argv) {
     ROS_INFO("[Drone %d] Waiting for waypoint list from bridge...", self_id_);
   }
 
+  if(bridge->register_callback(drone_num_, "/ryCtrl_"+std::to_string(self_id_), waypoint_list_bridge_cb))
+  {
+    ROS_INFO("[Drone %d] Waiting for ruiyan control from bridge...", self_id_);
+  }
+
   bridge->register_callback(drone_num_, "/takeoff_tcp", takeoff_command_bridge_cb);
   bridge->register_callback(drone_num_, "/land_tcp", land_command_bridge_cb);
   bridge->register_callback(drone_num_, "/mission_tcp", mission_mode_bridge_cb);
