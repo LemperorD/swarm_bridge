@@ -72,7 +72,6 @@ int main(int argc, char **argv) {
   battery_sub_ = nh.subscribe("/mavros/battery", 10, battery_sub_cb, ros::TransportHints().tcpNoDelay());
   state_sub_ = nh.subscribe("/mavros/state", 10, state_sub_cb, ros::TransportHints().tcpNoDelay());
   waypoint_list_sub_ = nh.subscribe("/mavros/mission/waypoints", 10, waypoint_list_sub_cb, ros::TransportHints().tcpNoDelay());
-  video_sub_ = nh.subscribe("/ruiyan_ros_sdk", 10, video_sub_cb, ros::TransportHints().tcpNoDelay()); // TBD
   gps_sub_ = nh.subscribe("/mavros/global_position/global", 10, gps_sub_cb, ros::TransportHints().tcpNoDelay());
   ryState_sub_ = nh.subscribe("/state_info", 10, ryState_sub_cb, ros::TransportHints().tcpNoDelay()); 
 
