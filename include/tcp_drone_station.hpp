@@ -19,6 +19,7 @@
 #include <mavros_msgs/BatteryStatus.h>
 #include <mavros_msgs/WaypointList.h>
 #include <mavros_msgs/WaypointPush.h>
+#include <mavros_msgs/WaypointSetCurrent.h>
 #include <mavros_msgs/CommandTOL.h>
 #include <mavros_msgs/CommandHome.h>
 #include <mavros_msgs/CommandLong.h>

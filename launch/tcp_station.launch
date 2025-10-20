@@ -7,7 +7,7 @@
       <param name="drone_num" value="10"/>
       <param name="drone_ip_0" value="192.168.1.151" type="string"/>
       <param name="drone_ip_1" value="192.168.1.23" type="string"/>
-      <param name="drone_ip_2" value="192.168.1.21" type="string"/>
+      <param name="drone_ip_2" value="192.168.1.153" type="string"/>
       <param name="drone_ip_3" value="192.168.1.22" type="string"/>
       <param name="drone_ip_4" value="192.168.1.25" type="string"/>
       <param name="drone_ip_5" value="192.168.1.154" type="string"/>

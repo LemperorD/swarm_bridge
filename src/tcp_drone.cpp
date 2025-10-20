@@ -12,8 +12,10 @@ ros::Publisher clear_wp_pub_; //地面到飞机：清除航点
 ros::Publisher ryCtrl_pub_; //地面到飞机：吊舱角度控制指令
 
 ros::ServiceClient waypoint_client; // 地面到飞机：航点下发
+ros::ServiceClient set_current_client; // 地面到飞机：设置当前航点
 
 mavros_msgs::WaypointPush waypoint_push_srv;
+mavros_msgs::WaypointSetCurrent set_current_srv;
 
 ros::Subscriber pose_sub_; // 飞机到地面：位姿
 ros::Subscriber vel_sub_; // 飞机到地面：速度
@@ -76,6 +78,7 @@ int main(int argc, char **argv) {
   ryState_sub_ = nh.subscribe("/state_info", 10, ryState_sub_cb, ros::TransportHints().tcpNoDelay()); 
 
   waypoint_client = nh.serviceClient<mavros_msgs::WaypointPush>("/mavros/mission/push");
+  set_current_client = nh.serviceClient<mavros_msgs::WaypointSetCurrent>("/mavros/mission/set_current");
 
   // if (bridge->register_callback(self_id_in_bridge_, "/takeoff_tcp", takeoff_command_bridge_cb))
   // {
@@ -97,6 +100,7 @@ int main(int argc, char **argv) {
       }
 
       ROS_INFO("[Drone %d] Received new waypoint list, uploading...", self_id_);
+
       if (waypoint_client.call(waypoint_push_srv)) {
         if (waypoint_push_srv.response.success)
           ROS_INFO("[Drone %d] Waypoint upload success (%lu waypoints)",
@@ -105,6 +109,15 @@ int main(int argc, char **argv) {
           ROS_WARN("[Drone %d] Waypoint upload failed", self_id_);
       } else {
         ROS_ERROR("[Drone %d] Failed to call MAVROS waypoint push service", self_id_);
+      }
+
+      if (set_current_client.call(set_current_srv)) {
+        if (set_current_srv.response.success)
+          ROS_INFO("[Drone %d] set current 0 success", self_id_);
+        else
+          ROS_WARN("[Drone %d] set current 0 failed", self_id_);
+      } else {
+        ROS_ERROR("[Drone %d] Failed to call MAVROS set current service", self_id_);
       }
 
       // ✅ 上传完成后清除标志以等待下一次
@@ -172,10 +185,10 @@ void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m) {
   mavros_msgs::WaypointList wp;
   ros::serialization::deserializeMessage(m, wp);
   ROS_INFO("Received waypoint list");
-  waypoint_push_srv.request.waypoints = wp.waypoints;
   {
     std::lock_guard<std::mutex> lock(wp_mutex);
     waypoint_push_srv.request.waypoints = wp.waypoints;
+    set_current_srv.request.wp_seq = 0;
     waypoint_received = true;  // ✅ 标记已收到航点
   }
   wp_cv.notify_all();  // ✅ 唤醒等待线程
