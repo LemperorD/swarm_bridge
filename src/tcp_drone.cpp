@@ -12,10 +12,12 @@ ros::Publisher clear_wp_pub_; //地面到飞机：清除航点
 ros::Publisher ryCtrl_pub_; //地面到飞机：吊舱角度控制指令
 
 ros::ServiceClient waypoint_client; // 地面到飞机：航点下发
-ros::ServiceClient set_current_client; // 地面到飞机：设置当前航点
+ros::ServiceClient set_current_client; // 地面到飞机：输入航点后设置当前航点为0
+ros::ServiceClient set_mission_client; // 地面到飞机：输入航点后设置为任务模式
 
 mavros_msgs::WaypointPush waypoint_push_srv;
 mavros_msgs::WaypointSetCurrent set_current_srv;
+mavros_msgs::SetMode set_mission_srv;
 
 ros::Subscriber pose_sub_; // 飞机到地面：位姿
 ros::Subscriber vel_sub_; // 飞机到地面：速度
@@ -120,6 +122,15 @@ int main(int argc, char **argv) {
         ROS_ERROR("[Drone %d] Failed to call MAVROS set current service", self_id_);
       }
 
+      if (set_mission_client.call(set_mission_srv)) {
+        if (set_mission_srv.response.mode_sent)
+          ROS_INFO("[Drone %d] set mission mode success", self_id_);
+        else
+          ROS_WARN("[Drone %d] set mission mode failed", self_id_);
+      } else {
+        ROS_ERROR("[Drone %d] Failed to call MAVROS set mode service", self_id_);
+      }
+
       // ✅ 上传完成后清除标志以等待下一次
       waypoint_received = false;
       r.sleep();
@@ -189,6 +200,7 @@ void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m) {
     std::lock_guard<std::mutex> lock(wp_mutex);
     waypoint_push_srv.request.waypoints = wp.waypoints;
     set_current_srv.request.wp_seq = 0;
+    set_mission_srv.request.custom_mode = "AUTO.MISSION";
     waypoint_received = true;  // ✅ 标记已收到航点
   }
   wp_cv.notify_all();  // ✅ 唤醒等待线程

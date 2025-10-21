@@ -20,9 +20,10 @@
 #include <mavros_msgs/WaypointList.h>
 #include <mavros_msgs/WaypointPush.h>
 #include <mavros_msgs/WaypointSetCurrent.h>
-#include <mavros_msgs/CommandTOL.h>
-#include <mavros_msgs/CommandHome.h>
-#include <mavros_msgs/CommandLong.h>
+#include <mavros_msgs/SetMode.h>
+// #include <mavros_msgs/CommandTOL.h>
+// #include <mavros_msgs/CommandHome.h>
+// #include <mavros_msgs/CommandLong.h>
 
 //睿沿SDK
 #include "ruiyan_ros_sdk/RuiyanControl.h"
