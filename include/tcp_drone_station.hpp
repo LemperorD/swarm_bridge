@@ -38,6 +38,15 @@ int drone_num_;
 int ground_station_num_;
 bool is_groundstation_;
 
+double pose_freq_;
+double gps_freq_;
+double vel_freq_;
+double battery_freq_;
+double state_freq_;
+double ryState_freq_;
+double alt_freq_;
+double waypoint_freq_;
+
 vector<int> id_list_;
 vector<string> ip_list_;
 

@@ -6,23 +6,30 @@
 
     <param name="self_id" value="$(arg drone_id)"/>
     <param name="is_ground_station" value="false"/>
-    <param name="odom_max_freq" value="10"/>
-    <param name="occupancy_broadcast_freq" value="1"/>
-    <param name="goal_point_freq" value="1"/>
-    <param name="drone_num" value="16"/>
-    <param name="drone_ip_0" value="192.168.1.21" type="string"/>
-    <param name="drone_ip_1" value="192.168.1.22" type="string"/>
-    <param name="drone_ip_2" value="192.168.1.23" type="string"/>
-    <param name="drone_ip_3" value="192.168.1.24" type="string"/>
-    <param name="drone_ip_4" value="192.168.1.31" type="string"/>
-    <param name="drone_ip_5" value="192.168.137.154" type="string"/>
-    <param name="drone_ip_6" value="192.168.1.33" type="string"/>
-    <param name="drone_ip_7" value="192.168.1.34" type="string"/>
-    <param name="drone_ip_8" value="192.168.1.35" type="string"/>
-    <param name="drone_ip_9" value="192.168.1.36" type="string"/>
+
+    <param name="pose_freq" value="10"/>
+    <param name="gps_freq" value="10"/>
+    <param name="vel_freq" value="10"/>
+    <param name="battery_freq" value="10"/>
+    <param name="state_freq" value="10"/>
+    <param name="ryState_freq" value="10"/>
+    <param name="alt_freq" value="10"/>
+    <param name="waypoint_freq" value="10"/>
+
+    <param name="drone_num" value="10"/>
+      <param name="drone_ip_0" value="192.168.1.150" type="string"/>
+      <param name="drone_ip_1" value="192.168.1.151" type="string"/>
+      <param name="drone_ip_2" value="192.168.1.152" type="string"/>
+      <param name="drone_ip_3" value="192.168.1.153" type="string"/>
+      <param name="drone_ip_4" value="192.168.1.154" type="string"/>
+      <param name="drone_ip_5" value="192.168.1.155" type="string"/>
+      <param name="drone_ip_6" value="192.168.1.156" type="string"/>
+      <param name="drone_ip_7" value="192.168.1.157" type="string"/>
+      <param name="drone_ip_8" value="192.168.1.158" type="string"/>
+      <param name="drone_ip_9" value="192.168.1.159" type="string"/>
 
     <param name="ground_station_num" value="1"/>
-    <param name="ground_station_ip_0" value="192.168.137.1" type="string"/>
+    <param name="ground_station_ip_0" value="192.168.1.6" type="string"/>
 
     <param name="pub_occupancy" value="true" type="bool"/>
 

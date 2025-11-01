@@ -24,7 +24,6 @@ ros::Subscriber vel_sub_; // 飞机到地面：速度
 ros::Subscriber battery_sub_; // 飞机到地面：电池状态
 ros::Subscriber state_sub_; // 飞机到地面：飞控状态
 ros::Subscriber waypoint_list_sub_; // 飞机到地面：当前航点列表
-ros::Subscriber video_sub_; // 飞机到地面：视频流
 ros::Subscriber gps_sub_ ; //飞机到地面：GPS信息
 ros::Subscriber ryState_sub_; // 飞机到地面：吊舱当前角度
 ros::Subscriber alt_sub_; // 飞机到地面：吊舱当前角度
@@ -42,7 +41,6 @@ void vel_sub_cb(const geometry_msgs::TwistStamped::ConstPtr &msg); // 飞机到�
 void battery_sub_cb(const sensor_msgs::BatteryState::ConstPtr &msg); // 飞机到地面：电池状态
 void state_sub_cb(const mavros_msgs::State::ConstPtr &msg); // 飞机到地面：飞控状态
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg); // 飞机到地面：当前航点列表
-void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg); // 飞机到地面：视频流
 void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg); //飞机到地面：GPS信息
 void ryState_sub_cb(const ruiyan_ros_sdk::RuiyanState::ConstPtr &msg); // 飞机到地面：吊舱当前角度
 void alt_sub_cb(const std_msgs::Float64::ConstPtr &msg); // 飞机到地面：吊舱当前角度
@@ -56,6 +54,15 @@ int main(int argc, char **argv) {
   nh.param("is_ground_station", is_groundstation_, false);
   nh.param("drone_num", drone_num_, 1);
   nh.param("ground_station_num", ground_station_num_, 0);
+
+  nh.param("pose_freq",  pose_freq_, 10.0);
+  nh.param("gps_freq",  gps_freq_, 10.0);
+  nh.param("vel_freq",  vel_freq_, 10.0);
+  nh.param("battery_freq",  battery_freq_, 10.0);
+  nh.param("state_freq",  state_freq_, 10.0);
+  nh.param("ryState_freq",  ryState_freq_, 10.0);
+  nh.param("alt_freq",  alt_freq_, 10.0);
+  nh.param("waypoint_freq",  waypoint_freq_, 1.0);
 
   // 配置 ID & IP
   id_list_.resize(drone_num_ + ground_station_num_);
@@ -219,46 +226,73 @@ void ryCtrl_bridge_cb(int ID, ros::SerializedMessage &m) {
 }
 
 void pose_sub_cb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  pose_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/pose_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void vel_sub_cb(const geometry_msgs::TwistStamped::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  vel_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/vel_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void battery_sub_cb(const sensor_msgs::BatteryState::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  battery_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/battery_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void state_sub_cb(const mavros_msgs::State::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  state_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/state_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void waypoint_list_sub_cb(const mavros_msgs::WaypointList::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  waypoint_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/wplist_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
-void video_sub_cb(const sensor_msgs::Image::ConstPtr &msg) {
-  std::string topic = "/video_tcp_" + std::to_string(self_id_in_bridge_);
-  send_to_all_groundstation_except_me(topic, *msg);
-}
-
 void gps_sub_cb(const sensor_msgs::NavSatFix::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  gps_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/gps_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void ryState_sub_cb(const ruiyan_ros_sdk::RuiyanState::ConstPtr &msg) {
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() * ryState_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/ryState_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
 
 void alt_sub_cb(const std_msgs::Float64::ConstPtr &msg){
+  static ros::Time t_last;
+  ros::Time t_now = ros::Time::now();
+  if ((t_now - t_last).toSec() *  alt_freq_ < 1.0) return;
+  t_last = t_now;
   std::string topic = "/alt_tcp_" + std::to_string(self_id_in_bridge_);
   send_to_all_groundstation_except_me(topic, *msg);
 }
