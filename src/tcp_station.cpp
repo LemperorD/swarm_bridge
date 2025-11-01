@@ -13,6 +13,7 @@ ros::Publisher* state_pubs = nullptr;
 ros::Publisher* waypoint_list_pubs = nullptr;
 ros::Publisher* gps_pubs = nullptr;
 ros::Publisher* ryState_pub_ = nullptr; // 飞机到地面：吊舱当前角度
+ros::Publisher* alt_pub_ = nullptr; // 飞机到地面：吊舱当前角度
 
 std::vector<ros::Subscriber> waypoint_list_subs_; // 地面到飞机：航点下发
 std::vector<ros::Subscriber> ryCtrl_subs_; // 地面到飞机：吊舱角度控制指令
@@ -35,6 +36,7 @@ void state_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：�
 void waypoint_list_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：当前航点列表
 void gps_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：GPS消息
 void ryState_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：吊舱当前角度
+void alt_bridge_cb(int ID, ros::SerializedMessage &m); // 飞机到地面：高度信息
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "swarm_bridge");
@@ -68,15 +70,17 @@ int main(int argc, char **argv) {
   waypoint_list_pubs = new ros::Publisher[drone_num_];
   gps_pubs = new ros::Publisher[drone_num_];
   ryState_pub_ = new ros::Publisher[drone_num_];
+  alt_pub_ = new ros::Publisher[drone_num_];
 
   for (int i = 0; i < drone_num_; ++i) {
     pose_pubs[i] = nh.advertise<geometry_msgs::PoseStamped>("/drone_"  + std::to_string(i) + "/pose", 10);
-    vel_pubs[i] = nh.advertise<geometry_msgs::Twist>("/drone_"  + std::to_string(i) +"/vel" , 10);
-    battery_pubs[i] = nh.advertise<mavros_msgs::BatteryStatus>("/drone_"  + std::to_string(i) +"/battery" , 10);
+    vel_pubs[i] = nh.advertise<geometry_msgs::TwistStamped>("/drone_"  + std::to_string(i) +"/vel" , 10);
+    battery_pubs[i] = nh.advertise<sensor_msgs::BatteryState>("/drone_"  + std::to_string(i) +"/battery" , 10);
     state_pubs[i] = nh.advertise<mavros_msgs::State>("/drone_"  + std::to_string(i) +"/state" , 10);
     waypoint_list_pubs[i] = nh.advertise<mavros_msgs::WaypointList>("/drone_"  + std::to_string(i) +"/wplist" , 10);
     gps_pubs[i] = nh.advertise<sensor_msgs::NavSatFix>("/drone_"  + std::to_string(i) +"/gps" , 10);
     ryState_pub_[i] = nh.advertise<ruiyan_ros_sdk::RuiyanState>("/drone_"  + std::to_string(i) +"/ryState" , 10);
+    alt_pub_[i] = nh.advertise<std_msgs::Float64>("/drone_"  + std::to_string(i) +"/alt" , 10);
   }
 
   for (int i = 0; i < drone_num_; ++i) {
@@ -126,6 +130,10 @@ int main(int argc, char **argv) {
     {
       ROS_INFO("Register ruiyan state callback for drone %d", i);
     }
+    if (bridge->register_callback(i, "/alt_tcp_" + std::to_string(i), alt_bridge_cb))
+    {
+      ROS_INFO("Register alt callback for drone %d", i);
+    }
   }
 
   takeoff_command_sub_ = nh.subscribe("/takeoff_trigger", 10, takeoff_command_sub_cb, ros::TransportHints().tcpNoDelay());
@@ -150,6 +158,7 @@ int main(int argc, char **argv) {
   delete[] waypoint_list_pubs;
   delete[] gps_pubs;
   delete[] ryState_pub_;
+  delete[] alt_pub_;
   return 0;
 }
 
@@ -190,13 +199,13 @@ void pose_bridge_cb(int ID, ros::SerializedMessage &m) {
 }
 
 void vel_bridge_cb(int ID, ros::SerializedMessage &m) {
-  geometry_msgs::Twist vel_msg_;
+  geometry_msgs::TwistStamped vel_msg_;
   ros::serialization::deserializeMessage(m, vel_msg_);
   vel_pubs[ID].publish(vel_msg_);
 }
 
 void battery_bridge_cb(int ID, ros::SerializedMessage &m) {
-  mavros_msgs::BatteryStatus battery_msg_;
+  sensor_msgs::BatteryState battery_msg_;
   ros::serialization::deserializeMessage(m, battery_msg_);
   battery_pubs[ID].publish(battery_msg_);
 }
@@ -223,4 +232,10 @@ void ryState_bridge_cb(int ID, ros::SerializedMessage &m) {
   ruiyan_ros_sdk::RuiyanState ryState_msg_;
   ros::serialization::deserializeMessage(m, ryState_msg_);
   ryState_pub_[ID].publish(ryState_msg_);
+}
+
+void alt_bridge_cb(int ID, ros::SerializedMessage &m) {
+  std_msgs::Float64 alt_msg_;
+  ros::serialization::deserializeMessage(m, alt_msg_);
+  alt_pub_[ID].publish(alt_msg_);
 }

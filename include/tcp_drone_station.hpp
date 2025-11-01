@@ -5,10 +5,11 @@
 #include "reliable_bridge.hpp"
 
 // 基础消息
-#include <std_msgs/String.h>
+#include <std_msgs/Float64.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/BatteryState.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/NavSatFix.h>

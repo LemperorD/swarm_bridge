@@ -1,16 +1,18 @@
 <launch>
 
-  <arg name="drone_id" default="0"/>
+  <arg name="drone_id" default="5"/>
 
   <node pkg="swarm_bridge" name="drone_$(arg drone_id)_bridge_node_tcp" type="tcp_drone" output="screen">
 
     <param name="self_id" value="$(arg drone_id)"/>
     <param name="is_ground_station" value="false"/>
-
-    <param name="drone_num" value="10"/>
-    <param name="drone_ip_0" value="192.168.1.151" type="string"/>
+    <param name="odom_max_freq" value="10"/>
+    <param name="occupancy_broadcast_freq" value="1"/>
+    <param name="goal_point_freq" value="1"/>
+    <param name="drone_num" value="16"/>
+    <param name="drone_ip_0" value="192.168.1.21" type="string"/>
     <param name="drone_ip_1" value="192.168.1.22" type="string"/>
-    <param name="drone_ip_2" value="192.168.1.153" type="string"/>
+    <param name="drone_ip_2" value="192.168.1.23" type="string"/>
     <param name="drone_ip_3" value="192.168.1.24" type="string"/>
     <param name="drone_ip_4" value="192.168.1.31" type="string"/>
     <param name="drone_ip_5" value="192.168.137.154" type="string"/>
